@@ -5,11 +5,10 @@ services:
     image: nginx:latest
     container_name: static-web
     restart: unless-stopped
+
     ports:
       - "80:80"
-      - "443:443"
 
     volumes:
       - /opt/app/html:/usr/share/nginx/html
-      - /etc/letsencrypt:/etc/letsencrypt
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
