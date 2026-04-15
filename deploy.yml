@@ -13,9 +13,9 @@
         state: directory
         mode: "0755"
 
-    - name: 3. Chép thẳng file SSL từ thư mục gốc vào VPS
+    - name: 3. Chép thẳng file SSL vào VPS (Dùng đường dẫn tuyệt đối)
       copy:
-        src: "{{ item }}"
+        src: "{{ playbook_dir }}/{{ item }}"
         dest: "/etc/nginx/ssl/{{ item }}"
       with_items:
         - server.crt
