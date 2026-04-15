@@ -23,7 +23,7 @@
 
     - name: 4. Chép code Web
       copy:
-        src: index.html
+        src: ./
         dest: /var/www/app/index.html
 
     - name: 5. Cấu hình Nginx cổng 443
