@@ -1,44 +1,42 @@
-name: Deploy to VPS
-
+name: Deploy to Nginx VPS
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
+          username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. Vào thư mục
+            # 1. Đảm bảo Nginx đã được cài đặt
+            if ! command -v nginx &> /dev/null; then
+              sudo apt update && sudo apt install -y nginx
+            fi
+
+            # 2. Vào thư mục web (thường Nginx dùng /var/www/html)
+            # Bạn có thể đổi /var/www/app thành /var/www/html nếu muốn
             sudo mkdir -p /var/www/app
             cd /var/www/app
 
-            # 2. Xử lý triệt để vụ thư mục không trống
+            # 3. Cập nhật code
             if [ -d ".git" ]; then
-              echo "Đang cập nhật code mới..."
               sudo git fetch --all
               sudo git reset --hard origin/main
             else
-              echo "Thư mục có file rác nhưng chưa có Git, đang dọn dẹp để clone mới..."
-              # Xóa sạch nội dung bên trong để clone không bị lỗi
-              sudo rm -rf ..?* .[!.]* * sudo git clone https://github.com/Dung996/deploy-web.git .
+              sudo rm -rf ..?* .[!.]* *
+              sudo git clone https://github.com/Dung996/deploy-web.git .
             fi
 
-            # 3. Kiểm tra file docker-compose.yml trước khi chạy
-            if [ -f "docker-compose.yml" ]; then
-              sudo docker compose up -d --build
-            else
-              echo "LỖI: Không tìm thấy file docker-compose.yml trong repo!"
-              exit 1
-            fi
+            # 4. Phân quyền cho Nginx đọc được file
+            sudo chown -R www-data:www-data /var/www/app
+            sudo chmod -R 755 /var/www/app
+
+            # 5. Reload Nginx để cập nhật thay đổi (nếu có đổi config)
+            sudo nginx -t && sudo systemctl reload nginx
