@@ -1,54 +1,64 @@
-- name: Deploy Web SSL Full Strict
+- name: Deploy Web SSL Full Strict - Sieu Toc
   hosts: all
   become: yes
   tasks:
-    - name: 1. Đảm bảo Nginx hiện diện
+    - name: 1. Cai dat Nginx va Rsync
       apt:
-        name: nginx
+        name: [nginx, rsync]
         state: present
+        update_cache: yes
 
-    - name: 2. Tạo thư mục chứa SSL (Bắt buộc phải có bước này)
+    - name: 2. Tao cac thu muc can thiet
       file:
-        path: /etc/nginx/ssl
+        path: "{{ item }}"
         state: directory
+        owner: www-data
+        group: www-data
         mode: "0755"
+      with_items:
+        - /etc/nginx/ssl
+        - /var/www/app
 
-    - name: 3. Chép thẳng file SSL vào VPS (Dùng đường dẫn tuyệt đối)
+    - name: 3. Chep SSL (Dung copy vi file nay it thay doi)
       copy:
         src: "{{ playbook_dir }}/{{ item }}"
         dest: "/etc/nginx/ssl/{{ item }}"
+        mode: "0600"
       with_items:
         - server.crt
         - server.key
 
-    - name: 4. Chép code Web
-      copy:
-        src: ./
-        dest: /var/www/app/index.html
+    - name: 4. Dong bo TOAN BO code (Nhanh va chinh xac nhat)
+      synchronize:
+        src: "./"
+        dest: /var/www/app/
+        # Loại bỏ những file không cần thiết để chạy nhanh hơn
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.github"
+          - "--exclude=deploy.yml"
+          - "--exclude=*.key"
+          - "--exclude=*.crt"
 
-    - name: 5. Cấu hình Nginx cổng 443
+    - name: 5. Cau hinh Nginx (Full SSL)
       copy:
         dest: /etc/nginx/sites-available/default
         content: |
           server {
               listen 80;
-              listen [::]:80;
               server_name _;
               return 301 https://$host$request_uri;
           }
           server {
               listen 443 ssl;
-              listen [::]:443 ssl;
               server_name _;
-
               ssl_certificate /etc/nginx/ssl/server.crt;
               ssl_certificate_key /etc/nginx/ssl/server.key;
-
               root /var/www/app;
               index index.html;
-
               location / {
                   try_files $uri $uri/ =404;
+                  add_header Cache-Control "no-cache, no-store, must-revalidate";
               }
           }
 
