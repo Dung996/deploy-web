@@ -1,23 +1,47 @@
-name: Deploy Web with Ansible
-on:
-  push:
-    branches: [main] # Hoặc master tùy theo nhánh của bạn
+- name: CI/CD Deploy with Nginx
+  hosts: all
+  become: yes
+  vars:
+    app_dir: /var/www/app
+    repo_url: "https://github.com/Dung996/deploy-web.git"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  tasks:
+    - name: Ensure Nginx is installed
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
 
-      - name: Run Ansible Playbook
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          # Chỉ thẳng vào file deploy.yml bạn đang có trong ảnh
-          playbook: deploy.yml
-          inventory: |
-            [web]
-            ${{ secrets.HOST }} ansible_user=root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          options: |
-            --inventory-file inventory
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Update code from Git
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes # Tương đương git reset --hard
+
+    - name: Configure Nginx Site
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80 default_server;
+              root {{ app_dir }};
+              index index.html;
+              location / {
+                  try_files $uri $uri/ =404;
+                  add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+              }
+          }
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted

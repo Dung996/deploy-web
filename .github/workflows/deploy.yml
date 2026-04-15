@@ -1,48 +1,18 @@
----
-- name: Deploy Web App
-  hosts: all
-  become: yes
-  vars:
-    app_dir: /var/www/app
-    repo_url: https://github.com/Dung996/deploy-web.git
+name: Deploy with Ansible
+on:
+  push:
+    branches: [main]
 
-  tasks:
-    - name: 1. Cai dat Nginx nhe
-      apt:
-        name: nginx
-        state: present
-        update_cache: yes
-
-    - name: 2. Tao thu muc app neu chua co
-      file:
-        path: "{{ app_dir }}"
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: "0755"
-
-    - name: 3. Keo code moi nhat (Tuong duong reset --hard)
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
-        version: main
-        force: yes
-
-    - name: 4. Cau hinh Nginx (De xoa sach loi 502 cu)
-      copy:
-        dest: /etc/nginx/sites-available/default
-        content: |
-          server {
-              listen 80 default_server;
-              root {{ app_dir }};
-              index index.html;
-              location / {
-                  try_files $uri $uri/ =404;
-                  add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
-              }
-          }
-
-    - name: 5. Kiem tra va Restart Nginx
-      service:
-        name: nginx
-        state: restarted
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Ansible Playbook
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: deploy.yml # Tên file ansible của bạn
+          inventory: |
+            [web]
+            ${{ secrets.HOST }} ansible_user=${{ secrets.USERNAME }} ansible_ssh_private_key_file=id_rsa
+          key: ${{ secrets.SSH_KEY }}
+          options: --extra-vars "repo_url=https://github.com/${{ github.repository }}.git"
