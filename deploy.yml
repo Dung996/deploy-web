@@ -1,45 +1,51 @@
-- name: Deploy Web chuyên nghiệp
+- name: Deploy Web SSL Full Strict
   hosts: all
   become: yes
   tasks:
-    - name: 1. Đảm bảo Nginx luôn hiện diện
+    - name: 1. Đảm bảo Nginx hiện diện
       apt:
         name: nginx
         state: present
 
-    - name: 2. Xóa code cũ để tránh rác (Nếu cần)
+    - name: 2. Tạo thư mục chứa SSL
       file:
-        path: /var/www/app/
-        state: absent
-
-    - name: 3. Tạo lại folder sạch sẽ
-      file:
-        path: /var/www/app/
+        path: /etc/nginx/ssl
         state: directory
-        owner: www-data
-        group: www-data
-        mode: "0755"
 
-    - name: 4. Chép code mới sang (Từ máy ảo sang VPS)
+    - name: 3. Chép chứng chỉ SSL sang VPS (File bạn vừa tạo ở máy Mac)
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - { src: "server.crt", dest: "/etc/nginx/ssl/server.crt" }
+        - { src: "server.key", dest: "/etc/nginx/ssl/server.key" }
+
+    - name: 4. Chép code Web
       copy:
         src: index.html
-        dest: /var/www/app/
+        dest: /var/www/html/index.html
 
-    - name: 5. Cấu hình Nginx tối ưu (Chống cache số điện thoại cũ)
+    - name: 5. Cấu hình Nginx cổng 443 (Cho Full Strict)
       copy:
         dest: /etc/nginx/sites-available/default
         content: |
           server {
               listen 80;
+              return 301 https://$host$request_uri;
+          }
+          server {
+              listen 443 ssl;
+              server_name _;
+              ssl_certificate /etc/nginx/ssl/server.crt;
+              ssl_certificate_key /etc/nginx/ssl/ssl/server.key;
               root /var/www/html;
               index index.html;
               location / {
                   try_files $uri $uri/ =404;
-                  add_header Cache-Control "no-cache, no-store, must-revalidate";
               }
           }
 
-    - name: 6. Kiểm tra cấu hình và Restart Nginx
+    - name: 6. Restart Nginx
       service:
         name: nginx
         state: restarted
