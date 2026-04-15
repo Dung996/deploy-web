@@ -1,42 +1,48 @@
-name: Deploy to Nginx VPS
-on:
-  push:
-    branches: [main]
+---
+- name: Deploy Web App
+  hosts: all
+  become: yes
+  vars:
+    app_dir: /var/www/app
+    repo_url: https://github.com/Dung996/deploy-web.git
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # 1. Đảm bảo Nginx đã được cài đặt
-            if ! command -v nginx &> /dev/null; then
-              sudo apt update && sudo apt install -y nginx
-            fi
+  tasks:
+    - name: 1. Cai dat Nginx nhe
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
 
-            # 2. Vào thư mục web (thường Nginx dùng /var/www/html)
-            # Bạn có thể đổi /var/www/app thành /var/www/html nếu muốn
-            sudo mkdir -p /var/www/app
-            cd /var/www/app
+    - name: 2. Tao thu muc app neu chua co
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
 
-            # 3. Cập nhật code
-            if [ -d ".git" ]; then
-              sudo git fetch --all
-              sudo git reset --hard origin/main
-            else
-              sudo rm -rf ..?* .[!.]* *
-              sudo git clone https://github.com/Dung996/deploy-web.git .
-            fi
+    - name: 3. Keo code moi nhat (Tuong duong reset --hard)
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
 
-            # 4. Phân quyền cho Nginx đọc được file
-            sudo chown -R www-data:www-data /var/www/app
-            sudo chmod -R 755 /var/www/app
+    - name: 4. Cau hinh Nginx (De xoa sach loi 502 cu)
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80 default_server;
+              root {{ app_dir }};
+              index index.html;
+              location / {
+                  try_files $uri $uri/ =404;
+                  add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0";
+              }
+          }
 
-            # 5. Reload Nginx để cập nhật thay đổi (nếu có đổi config)
-            sudo nginx -t && sudo systemctl reload nginx
+    - name: 5. Kiem tra va Restart Nginx
+      service:
+        name: nginx
+        state: restarted

@@ -1,0 +1,23 @@
+name: Deploy Web with Ansible
+on:
+  push:
+    branches: [main] # Hoặc master tùy theo nhánh của bạn
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Ansible Playbook
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          # Chỉ thẳng vào file deploy.yml bạn đang có trong ảnh
+          playbook: deploy.yml
+          inventory: |
+            [web]
+            ${{ secrets.HOST }} ansible_user=root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          options: |
+            --inventory-file inventory
