@@ -7,18 +7,13 @@
         name: nginx
         state: present
 
-    - name: 2. Tạo thư mục chứa SSL
-      file:
-        path: /etc/nginx/ssl
-        state: directory
-
     - name: 3. Chép chứng chỉ SSL sang VPS (File bạn vừa tạo ở máy Mac)
       copy:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
       with_items:
-        - { src: "server.crt", dest: "/etc/nginx/ssl/server.crt" }
-        - { src: "server.key", dest: "/etc/nginx/ssl/server.key" }
+        - { src: "server.crt", dest: "/deploy-web/server.crt" }
+        - { src: "server.key", dest: "/deploy-web/server.key" }
 
     - name: 4. Chép code Web
       copy:
