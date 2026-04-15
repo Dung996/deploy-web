@@ -9,12 +9,12 @@
 
     - name: 2. Xóa code cũ để tránh rác (Nếu cần)
       file:
-        path: /var/www/html/
+        path: /var/www/app/
         state: absent
 
     - name: 3. Tạo lại folder sạch sẽ
       file:
-        path: /var/www/html/
+        path: /var/www/app/
         state: directory
         owner: www-data
         group: www-data
@@ -22,8 +22,8 @@
 
     - name: 4. Chép code mới sang (Từ máy ảo sang VPS)
       copy:
-        src: ./
-        dest: /var/www/html/
+        src: index.html
+        dest: /var/www/app/
 
     - name: 5. Cấu hình Nginx tối ưu (Chống cache số điện thoại cũ)
       copy:
