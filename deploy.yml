@@ -7,34 +7,46 @@
         name: nginx
         state: present
 
-    - name: 3. Chép chứng chỉ SSL sang VPS (File bạn vừa tạo ở máy Mac)
+    - name: 2. Tạo thư mục chứa SSL (Bắt buộc phải có bước này)
+      file:
+        path: /etc/nginx/ssl
+        state: directory
+        mode: "0755"
+
+    - name: 3. Chép chứng chỉ SSL vào ĐÚNG chỗ
       copy:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
       with_items:
-        - { src: "server.crt", dest: "/deploy-web/server.crt" }
-        - { src: "server.key", dest: "/deploy-web/server.key" }
+        - { src: "server.crt", dest: "/etc/nginx/ssl/server.crt" }
+        - { src: "server.key", dest: "/etc/nginx/ssl/server.key" }
 
     - name: 4. Chép code Web
       copy:
         src: index.html
-        dest: /var/www/app/
+        dest: /var/www/app/index.html
 
-    - name: 5. Cấu hình Nginx cổng 443 (Cho Full Strict)
+    - name: 5. Cấu hình Nginx cổng 443
       copy:
         dest: /etc/nginx/sites-available/default
         content: |
           server {
               listen 80;
+              listen [::]:80;
+              server_name _;
               return 301 https://$host$request_uri;
           }
           server {
               listen 443 ssl;
+              listen [::]:443 ssl;
               server_name _;
+
               ssl_certificate /etc/nginx/ssl/server.crt;
               ssl_certificate_key /etc/nginx/ssl/server.key;
+
               root /var/www/app;
               index index.html;
+
               location / {
                   try_files $uri $uri/ =404;
               }
