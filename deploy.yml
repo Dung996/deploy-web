@@ -23,7 +23,7 @@
     - name: 4. Chép code Web
       copy:
         src: index.html
-        dest: /var/www/html/index.html
+        dest: /var/www/app/
 
     - name: 5. Cấu hình Nginx cổng 443 (Cho Full Strict)
       copy:
@@ -37,8 +37,8 @@
               listen 443 ssl;
               server_name _;
               ssl_certificate /etc/nginx/ssl/server.crt;
-              ssl_certificate_key /etc/nginx/ssl/ssl/server.key;
-              root /var/www/html;
+              ssl_certificate_key /etc/nginx/ssl/server.key;
+              root /var/www/app;
               index index.html;
               location / {
                   try_files $uri $uri/ =404;
