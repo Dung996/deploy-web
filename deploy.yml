@@ -7,13 +7,19 @@
         name: nginx
         state: present
 
-    - name: 3. Chép chứng chỉ SSL vào ĐÚNG chỗ
+    - name: 2. Tạo thư mục chứa SSL (Bắt buộc phải có bước này)
+      file:
+        path: /etc/nginx/ssl
+        state: directory
+        mode: "0755"
+
+    - name: 3. Chép thẳng file SSL từ thư mục gốc vào VPS
       copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
+        src: "{{ item }}"
+        dest: "/etc/nginx/ssl/{{ item }}"
       with_items:
-        - { src: "server.crt", dest: "/server.crt" }
-        - { src: "server.key", dest: "/server.key" }
+        - server.crt
+        - server.key
 
     - name: 4. Chép code Web
       copy:
