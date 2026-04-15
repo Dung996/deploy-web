@@ -1,31 +1,42 @@
-name: Deploy to VPS
-
+name: Deploy to Nginx VPS
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
+          username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo mkdir -p /var/www/app
-            sudo chown -R root:root /var/www/app
-            cd /var/www/app
-            if [ ! -d ".git" ]; then
-              sudo git clone https://github.com/Dung996/deploy-web.git .
-            else
-              sudo git pull origin main
+            # 1. Đảm bảo Nginx đã được cài đặt
+            if ! command -v nginx &> /dev/null; then
+              sudo apt update && sudo apt install -y nginx
             fi
-            sudo docker compose up -d --build
+
+            # 2. Vào thư mục web (thường Nginx dùng /var/www/html)
+            # Bạn có thể đổi /var/www/app thành /var/www/html nếu muốn
+            sudo mkdir -p /var/www/app
+            cd /var/www/app
+
+            # 3. Cập nhật code
+            if [ -d ".git" ]; then
+              sudo git fetch --all
+              sudo git reset --hard origin/main
+            else
+              sudo rm -rf ..?* .[!.]* *
+              sudo git clone https://github.com/Dung996/deploy-web.git .
+            fi
+
+            # 4. Phân quyền cho Nginx đọc được file
+            sudo chown -R www-data:www-data /var/www/app
+            sudo chmod -R 755 /var/www/app
+
+            # 5. Reload Nginx để cập nhật thay đổi (nếu có đổi config)
+            sudo nginx -t && sudo systemctl reload nginx
