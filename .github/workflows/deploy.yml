@@ -18,6 +18,12 @@ jobs:
           printf "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+          - name: Run Ansible
+
+      - name: Test SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+          ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo connected"
 
       - name: Sync code to VPS
         run: |
