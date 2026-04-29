@@ -19,6 +19,11 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
+      - name: Debug secrets
+        run: |
+          echo "USER=${{ secrets.USERNAME }}"
+          echo "HOST=${{ secrets.HOST }}"
+
       - name: Test SSH
         run: |
           sh -i ~/.ssh/id_ed25519 \
