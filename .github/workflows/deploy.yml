@@ -21,23 +21,23 @@ jobs:
 
       - name: Debug secrets
         run: |
-          echo "USER=${{ secrets.USERNAME }}"
+          echo "USER=${{ secrets.USER }}"
           echo "HOST=${{ secrets.HOST }}"
 
       - name: Test SSH
         run: |
           sh -i ~/.ssh/id_ed25519 \
           ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo connected"
+          ${{ secrets.USER }}@${{ secrets.HOST }} "echo connected"
 
       - name: Sync code to VPS
         run: |
           rsync -avz --delete ./ \
-          ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/app
+          ${{ secrets.USER }}@${{ secrets.HOST }}:/var/www/app
 
       - name: Deploy on VPS (build + restart nginx)
         run: |
-          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+          ssh ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
 
           cd /var/www/app
 
