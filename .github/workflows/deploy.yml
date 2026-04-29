@@ -17,22 +17,23 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH
         run: |
           ssh -i ~/.ssh/id_ed25519 \
           -o StrictHostKeyChecking=no \
-          ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo OK"
+          -o UserKnownHostsFile=~/.ssh/known_hosts \
+          ${{ secrets.USER }}@${{ secrets.HOST }} "echo OK"
 
       - name: Sync code to VPS
         run: |
-          rsync -avz --delete ./ \
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./ \
           ${{ secrets.USER }}@${{ secrets.HOST }}:/var/www/app
 
       - name: Deploy on VPS (build + restart nginx)
         run: |
-          ssh ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
 
           cd /var/www/app
 
