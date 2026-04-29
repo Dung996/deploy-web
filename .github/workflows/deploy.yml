@@ -21,6 +21,7 @@ jobs:
 
       - name: Test SSH
         run: |
+          sh -i ~/.ssh/id_ed25519 \
           ssh -o StrictHostKeyChecking=no \
           ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo connected"
 
