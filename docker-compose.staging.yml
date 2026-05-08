@@ -1,6 +1,12 @@
 services:
-  app:
-    container_name: app-staging
-    build: .
+  staging-app:
+    image: nginx:alpine
+    container_name: staging-app
+
     ports:
-      - "3002:3000"
+      - "3002:80"
+
+    volumes:
+      - .:/usr/share/nginx/html:ro
+
+    restart: always

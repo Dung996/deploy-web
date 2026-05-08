@@ -1,6 +1,12 @@
 services:
-  app:
-    container_name: app-dev
-    build: .
+  dev-app:
+    image: nginx:alpine
+    container_name: dev-app
+
     ports:
-      - "3001:3000"
+      - "3001:80"
+
+    volumes:
+      - .:/usr/share/nginx/html:ro
+
+    restart: always

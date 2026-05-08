@@ -1,6 +1,12 @@
 services:
-  app:
-    container_name: app-prod
-    build: .
+  production-app:
+    image: nginx:alpine
+    container_name: production-app
+
     ports:
-      - "3000:3000"
+      - "3000:80"
+
+    volumes:
+      - .:/usr/share/nginx/html:ro
+
+    restart: always
