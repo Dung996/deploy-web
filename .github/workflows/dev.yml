@@ -21,6 +21,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
           target: "/app/dev"
+          rm: true
 
       - name: Deploy app
         uses: appleboy/ssh-action@v1.0.3
@@ -30,6 +31,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /app/dev
+
+            docker compose \ -f docker-compose.dev.yml \ down
 
             docker compose \
               -f docker-compose.dev.yml \
