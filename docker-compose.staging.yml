@@ -1,0 +1,6 @@
+services:
+  app:
+    container_name: app-staging
+    build: .
+    ports:
+      - "3002:3000"
