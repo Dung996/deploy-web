@@ -15,6 +15,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: set deploy path
         id: path
         run: |
