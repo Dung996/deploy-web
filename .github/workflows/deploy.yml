@@ -40,5 +40,5 @@ jobs:
 
       - name: deploy
         run: |
-          rsync -avz --delete ./website/ \
+          rsync -avz --delete ./ \
             root@${{ secrets.HOST }}:${{ steps.path.outputs.TARGET }}
