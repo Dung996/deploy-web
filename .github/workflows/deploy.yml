@@ -29,13 +29,13 @@ jobs:
         id: path
         run: |
           if [[ "${GITHUB_REF_NAME}" == "dev" ]]; then
-            echo "TARGET=/var/www/dev" >> $GITHUB_OUTPUT
+            echo "TARGET=/var/www/dev/html" >> $GITHUB_OUTPUT
 
           elif [[ "${GITHUB_REF_NAME}" == "staging" ]]; then
-            echo "TARGET=/var/www/staging" >> $GITHUB_OUTPUT
+            echo "TARGET=/var/www/staging/html" >> $GITHUB_OUTPUT
 
           else
-            echo "TARGET=/var/www/prod" >> $GITHUB_OUTPUT
+            echo "TARGET=/var/www/prod/html" >> $GITHUB_OUTPUT
           fi
 
       - name: Deploy
