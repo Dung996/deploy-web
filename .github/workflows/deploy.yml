@@ -30,15 +30,27 @@ jobs:
         run: |
           if [[ "${GITHUB_REF_NAME}" == "dev" ]]; then
             echo "TARGET=/var/www/dev/html" >> $GITHUB_OUTPUT
+            echo "APP_DIR=/var/www/dev" >> $GITHUB_OUTPUT
 
           elif [[ "${GITHUB_REF_NAME}" == "staging" ]]; then
             echo "TARGET=/var/www/staging/html" >> $GITHUB_OUTPUT
+            echo "APP_DIR=/var/www/staging" >> $GITHUB_OUTPUT
 
           else
             echo "TARGET=/var/www/prod/html" >> $GITHUB_OUTPUT
+            echo "APP_DIR=/var/www/prod" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy
+      - name: Deploy code to VPS
         run: |
-          rsync -avz --delete ./ \
-            root@${{ secrets.HOST }}:${{ steps.path.outputs.TARGET }}
+          rsync -avz --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            ./ root@${{ secrets.HOST }}:${{ steps.path.outputs.TARGET }}
+
+      - name: Restart Docker Compose
+        run: |
+          ssh root@${{ secrets.HOST }} << 'EOF'
+            cd ${{ steps.path.outputs.APP_DIR }}
+            docker-compose up -d
+          EOF
